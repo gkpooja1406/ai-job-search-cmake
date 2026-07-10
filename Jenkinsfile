@@ -31,7 +31,6 @@ pipeline {
                     cmake --version
                     gcc --version
                     make --version
-                    objcopy --version || echo "GNU objcopy not found, make sure arm-none-eabi-objcopy or standard objcopy is available"
                 '''
             }
         }
@@ -61,31 +60,28 @@ pipeline {
             }
         }
 
-        stage('Generate Artifacts') {
+        stage('Generate Artifact Formats') {
             steps {
-                echo 'Generating .bin, .elf, .hex, and report.txt files...'
-                
+                echo 'Generating binary formats and reports...'
+
                 sh '''
                     set -e
-                    
-                    # Ensure we are working inside the build directory
+
                     cd build
-                    
-                    # 1. Create the .elf file (copying the main executable)
+
+                    # Create the ELF binary format
                     cp ai_job_search ai_job_search.elf
-                    
-                    # 2. Extract raw binary format from the ELF file
-                    objcopy -O binary ai_job_search.elf ai_job_search.bin
-                    
-                    # 3. Extract Intel Hex format from the ELF file
-                    objcopy -O ihex ai_job_search.elf ai_job_search.hex
-                    
-                    # 4. Generate the report.txt file summarizing the build
-                    echo "Build Report" > report.txt
-                    echo "==================" >> report.txt
-                    echo "Build Timestamp: $(date)" >> report.txt
-                    echo "Binary Sizes:" >> report.txt
-                    ls -lh ai_job_search* >> report.txt
+
+                    # Create raw machine binary layout format
+                    objcopy -O binary ai_job_search ai_job_search.bin
+
+                    # Create Intel HEX configuration format
+                    objcopy -O ihex ai_job_search ai_job_search.hex
+
+                    # Generate the summary report text file
+                    echo "AI Job Search Build Summary" > report.txt
+                    echo "==========================" >> report.txt
+                    echo "Build Date: $(date)" >> report.txt
                 '''
             }
         }
@@ -127,7 +123,6 @@ pipeline {
             steps {
                 echo 'Archiving executable and formatted output files...'
 
-                # Includes all exact artifact patterns shown in the image layout
                 archiveArtifacts(
                     artifacts: 'build/ai_job_search, build/ai_job_search.bin, build/ai_job_search.elf, build/ai_job_search.hex, build/report.txt',
                     fingerprint: true,
